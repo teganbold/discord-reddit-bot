@@ -1,48 +1,23 @@
 import discord
-import responses
+from discord.ext import commands
 import os
-import reddit
+import reddit_post
 from dotenv import load_dotenv
 
-async def send_message(message, user_message, is_private):
-    try:
-        response = responses.handle_response(user_message)
-        await message.author(response) if is_private else await message.channel.send(response)
-    except Exception as e:
-        print(e)
 
-async def send_post(message, user_message, is_private):
-    try:
-        subreddit = user_message[13:]
-        print(subreddit)
-        response = reddit.fetch_post(subreddit)
-        await message.author(response) if is_private else await message.channel.send(response)
-    except Exception as e:
-        print(e)
-
-    
 def run_discord_bot():
     load_dotenv()
     intents = discord.Intents.default()
     intents.message_content = True
-    client = discord.Client(intents = intents)
-    
-    @client.event
+    bot = commands.Bot(command_prefix='!', intents=intents)
+
+    @bot.event
     async def on_ready():
-        print(f"{client.user} is now running!")
-    
-    @client.event
-    async def on_message(message):
-        if message.author == client.user:
-            return
-        
-        username = str(message.author)
-        user_message = str(message.content)
-        channel = str(message.channel)
+        print("Bot is now running!")
 
-        print(f"{username} said {user_message} in {channel}")
-
-        if user_message[:12] == "/bewb_reddit":
-            await send_post(message, user_message, is_private=False)
+    @bot.command()
+    async def reddit(ctx, arg):
+        response = reddit_post.fetch_post(arg)
+        await ctx.send(response)
     
-    client.run(os.getenv("DISCORD_TOKEN"))
+    bot.run(os.getenv("DISCORD_TOKEN"))
